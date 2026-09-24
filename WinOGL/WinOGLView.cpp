@@ -4,9 +4,9 @@
 
 #include "pch.h"
 
-//ビルドできなくて入れる羽目に
-#pragma comment(lib, "opengl32.lib")
-#pragma comment(lib, "glu32.lib")
+////ビルドできなくて入れる羽目に
+//#pragma comment(lib, "opengl32.lib")
+//#pragma comment(lib, "glu32.lib")
 
 #include "framework.h"
 
@@ -35,6 +35,7 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 ON_WM_CREATE()
 ON_WM_DESTROY()
 ON_WM_ERASEBKGND()
+ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -158,4 +159,33 @@ void CWinOGLView::OnDestroy() {
 
 BOOL CWinOGLView::OnEraseBkgnd(CDC* pDC) {
 	return true;
+}
+
+//OnSize関数
+
+void CWinOGLView::OnSize(UINT nType, int cx, int cy) {
+	CView::OnSize(nType, cx, cy);
+	CClientDC clientDC(this);
+	wglMakeCurrent(clientDC.m_hDC, m_hRC);
+	glViewport(0, 0, cx, cy);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	double aspect;
+
+	//課題1:視体積の設定
+	if (cx == 0) { cx = 1; }
+	if (cy == 0) { cy = 1; }
+	if (cx >= cy) {
+		aspect = cx / cy;
+		glOrtho(-aspect, aspect, -1.0, 1.0, -100.0, 100.0);
+	}
+	else {
+		aspect = cx / cy;
+		glOrtho(-1.0,1.0, -aspect,aspect, -100.0, 100.0);
+	}
+
+	glMatrixMode(GL_MODELVIEW);
+	RedrawWindow();
+	wglMakeCurrent(clientDC.m_hDC, NULL);
 }
