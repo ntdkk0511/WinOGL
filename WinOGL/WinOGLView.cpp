@@ -1,15 +1,6 @@
-﻿
-// WinOGLView.cpp : CWinOGLView クラスの実装
-//
-
+﻿// WinOGLView.cpp : CWinOGLView クラスの実装
 #include "pch.h"
-
-////ビルドできなくて入れる羽目に
-//#pragma comment(lib, "opengl32.lib")
-//#pragma comment(lib, "glu32.lib")
-
 #include "framework.h"
-
 // SHARED_HANDLERS は、プレビュー、縮小版、および検索フィルター ハンドラーを実装している ATL プロジェクトで定義でき、
 // そのプロジェクトとのドキュメント コードの共有を可能にします。
 #ifndef SHARED_HANDLERS
@@ -42,8 +33,9 @@ END_MESSAGE_MAP()
 
 CWinOGLView::CWinOGLView() noexcept
 {
-	// TODO: 構築コードをここに追加します。
-
+	//ここで初期化とかしとけば，最初からその値が入る便利なヤツ:コンストラクタ
+	x_Ldown = 0.0f;
+	y_Ldown = 0.0f;
 }
 
 CWinOGLView::~CWinOGLView()
@@ -52,16 +44,13 @@ CWinOGLView::~CWinOGLView()
 
 BOOL CWinOGLView::PreCreateWindow(CREATESTRUCT& cs)
 {
-	// TODO: この位置で CREATESTRUCT cs を修正して Window クラスまたはスタイルを
-	//  修正してください。
-
 	return CView::PreCreateWindow(cs);
 }
 
 // CWinOGLView 描画
+//OnDrow関数
 
-void CWinOGLView::OnDraw(CDC* pDC)
-{
+void CWinOGLView::OnDraw(CDC* pDC) {
 	CWinOGLDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	if (!pDoc)
@@ -71,20 +60,16 @@ void CWinOGLView::OnDraw(CDC* pDC)
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT /* | GL_DEPTH_BUFFER_BIT*/);
 
-	glColor3f(1.0, 1.0, 1.0); // 色を設定
-	glBegin(GL_LINE_STRIP); // 描画の開始
-	glVertex2f(-1.0, 0.5); // 1点目の座標
-	glVertex2f(0.0, -0.5); // 2点目の座標
-	glVertex2f(1.0, 0.5); // 3点目の座標
-	glVertex2f(-1.0, 0.5); // 4点目の座標(始点に戻る)
-	glEnd(); // 描画の終了
-
+	AC.Draw();	
+	//glColor3f(1.0, 1.0, 1.0);
+	//glPointSize(5.0);
+	//glBegin(GL_POINTS);
+	//glVertex2f(x_Ldown, y_Ldown);
+	//glEnd();
 	glFlush();
 	SwapBuffers(pDC->m_hDC);
 	wglMakeCurrent(pDC->m_hDC, NULL);
-
 }
-
 
 // CWinOGLView の診断
 
@@ -110,16 +95,35 @@ CWinOGLDoc* CWinOGLView::GetDocument() const // デバッグ以外のバージ�
 // CWinOGLView メッセージ ハンドラー
 
 void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point) {
-	// TODO: ここにメッセージ ハンドラー コードを追加するか、既定の処理を呼び出します。
+	// 描画領域の大きさを取得
+	CRect rect;
+	GetClientRect(rect);
 
+	x_Ldown = point.x;
+	y_Ldown = point.y;
+	//正規化
+	float seiki_x = x_Ldown/rect.Width();
+	float seiki_y = (rect.Height() - y_Ldown) / rect.Height();
+	//ワールド座標系
+	float world_x = (seiki_x - 0.5f)*2.0f;
+	float world_y = (seiki_y - 0.5f)*2.0f;
+	//描画のために代入
+	x_Ldown = world_x;
+	y_Ldown = world_y;
+	
+	//横長の場合
+	if (rect.Width() - rect.Height() >= 0) {
+		float aspect = rect.Width() / rect.Height();
+		x_Ldown = x_Ldown * aspect;
+	}
+	else {
+		float aspect = rect.Height() / rect.Width();
+		y_Ldown = y_Ldown * aspect;
+	}
+	AC.AddVertex(x_Ldown, y_Ldown);
+	RedrawWindow();
 	CView::OnLButtonDown(nFlags, point);
 }
-
-//void CWinOGLView::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized) {
-//	CView::OnActivate(nState, pWndOther, bMinimized);
-//
-	// TODO: ここにメッセージ ハンドラー コードを追加します。
-//}
 
 int CWinOGLView::OnCreate(LPCREATESTRUCT lpCreateStruct) {
 	if (CView::OnCreate(lpCreateStruct) == -1)
@@ -181,7 +185,7 @@ void CWinOGLView::OnSize(UINT nType, int cx, int cy) {
 		glOrtho(-aspect, aspect, -1.0, 1.0, -100.0, 100.0);
 	}
 	else {
-		aspect = cx / cy;
+		aspect = cy / cx;
 		glOrtho(-1.0,1.0, -aspect,aspect, -100.0, 100.0);
 	}
 

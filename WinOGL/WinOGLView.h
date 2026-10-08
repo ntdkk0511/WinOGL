@@ -4,6 +4,7 @@
 
 #pragma once
 #include <gl/GL.h>
+#include "CAdminControl.h"
 
 class CWinOGLView : public CView
 {
@@ -50,6 +51,13 @@ public:
 	afx_msg void OnDestroy();
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+private:
+	// 左クリックしたx座標を格納
+	float x_Ldown;
+	// 左クリックしたy座標を格納
+	float y_Ldown;
+
+	CAdminControl AC;
 };
 
 #ifndef _DEBUG  // WinOGLView.cpp のデバッグ バージョン
